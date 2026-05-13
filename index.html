@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>free will generator</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <main class="frame">
+
+    <!-- 1. start -->
+    <section class="screen screen--start" data-screen="start">
+      <div class="heads">
+        <img src="assets/head-1.png" alt="" class="head" />
+        <img src="assets/head-2.png" alt="" class="head" />
+        <img src="assets/head-3.png" alt="" class="head head--bulb" />
+        <img src="assets/head-4.png" alt="" class="head" />
+      </div>
+      <h1 class="title">free will generator</h1>
+      <button class="btn-start" type="button" id="start-btn">click to start</button>
+    </section>
+
+    <!-- 2. loading -->
+    <section class="screen screen--loading" data-screen="loading" hidden>
+      <p class="loading-text" id="loading-text"></p>
+    </section>
+
+    <!-- 3. closed envelope -->
+    <section class="screen screen--closed" data-screen="closed" hidden>
+      <img src="assets/head-3.png" alt="" class="bulb" />
+      <h2 class="title">your will is ready</h2>
+      <button class="envelope-btn" type="button" id="envelope-btn" aria-label="open envelope">
+        <span class="envelope">
+          <svg class="envelope-svg" viewBox="0 0 380 175" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <rect x="2" y="2" width="376" height="171" rx="4" fill="#f0b3c0" stroke="#1a1226" stroke-width="2.5" />
+            <path d="M 3.25 3.25 L 190 108 L 376.75 3.25" fill="none" stroke="#1a1226" stroke-width="2.5" stroke-linejoin="miter" />
+          </svg>
+          <img src="assets/seal-small.png" alt="" class="seal" />
+        </span>
+      </button>
+      <p class="open-me">open me</p>
+    </section>
+
+    <!-- 4. opened -->
+    <section class="screen screen--opened" data-screen="opened" hidden>
+      <img src="assets/head-3.png" alt="" class="bulb" />
+      <h2 class="title">your will is ready</h2>
+      <div class="notebook">
+        <div class="row row--empty"></div>
+        <div class="row row--text"><span id="will-text">Compliment a stranger</span></div>
+        <div class="row row--empty"></div>
+        <div class="row row--empty"></div>
+      </div>
+      <div class="stickies">
+        <button class="sticky sticky--left" type="button" id="share-btn">
+          <svg class="clip" viewBox="0 0 40 80" aria-hidden="true">
+            <path d="M 20 75 L 20 18 Q 20 6 28 6 Q 36 6 36 18 L 36 60 Q 36 70 26 70 Q 12 70 12 56 L 12 18 Q 12 12 18 12 L 28 12 Q 32 12 32 16 L 32 58" fill="none" stroke="#c5c5cf" stroke-width="3.5" stroke-linecap="round"/>
+          </svg>
+          <span>Share with<br/>a friend</span>
+        </button>
+        <button class="sticky sticky--right" type="button" id="regen-btn">
+          <svg class="clip" viewBox="0 0 40 80" aria-hidden="true">
+            <path d="M 20 75 L 20 18 Q 20 6 28 6 Q 36 6 36 18 L 36 60 Q 36 70 26 70 Q 12 70 12 56 L 12 18 Q 12 12 18 12 L 28 12 Q 32 12 32 16 L 32 58" fill="none" stroke="#c5c5cf" stroke-width="3.5" stroke-linecap="round"/>
+          </svg>
+          <span>Regenerate</span>
+        </button>
+      </div>
+      <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    </section>
+
+  </main>
+  <script src="wills.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
