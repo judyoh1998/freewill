@@ -9,7 +9,8 @@
     "extract": "node scripts/extract-from-pdf.mjs"
   },
   "devDependencies": {
-    "pdfjs-dist": "^4.10.38",
+    "pdf-lib": "^1.17.1",
+    "jpeg-js": "^0.4.4",
     "pngjs": "^7.0.0",
     "serve": "^14.2.4"
   },
