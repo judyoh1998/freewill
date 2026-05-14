@@ -59,6 +59,11 @@
     const span = document.getElementById('will-text');
     span.textContent = next;
     requestAnimationFrame(() => fitWill(span));
+    // Re-fit once the pixel font has actually loaded (it's wider than the
+    // system fallback, so a pre-load fit can underestimate the real width).
+    if (document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(() => fitWill(span));
+    }
   }
 
   function fitWill(span) {
@@ -67,7 +72,7 @@
     if (available <= 0) return;
     let size = 22;
     span.style.fontSize = size + 'px';
-    while (span.scrollWidth > available && size > 10) {
+    while (span.scrollWidth > available && size > 9) {
       size -= 1;
       span.style.fontSize = size + 'px';
     }
