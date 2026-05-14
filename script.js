@@ -13,13 +13,11 @@
     });
   }
 
-  // ----- start -----
   document.getElementById('start-btn').addEventListener('click', () => {
     show('loading');
     runLoading();
   });
 
-  // ----- loading typewriter ("loading..." letter by letter, last char tinted) -----
   function runLoading() {
     const target = 'loading...';
     const el = document.getElementById('loading-text');
@@ -27,7 +25,6 @@
     let i = 0;
     const tick = () => {
       if (i >= target.length) {
-        // brief pause then advance
         setTimeout(() => {
           show('closed');
         }, 500);
@@ -43,13 +40,11 @@
     tick();
   }
 
-  // ----- closed -> opened -----
   document.getElementById('envelope-btn').addEventListener('click', () => {
-    pickWill();
     show('opened');
+    pickWill();
   });
 
-  // ----- regenerate -----
   let lastWill = null;
   function pickWill() {
     const wills = window.WILLS || [];
@@ -63,16 +58,16 @@
     lastWill = next;
     const span = document.getElementById('will-text');
     span.textContent = next;
-    fitWill(span);
+    requestAnimationFrame(() => fitWill(span));
   }
 
-  // Shrink the will text so any prompt fits on one notebook line.
   function fitWill(span) {
     const parent = span.parentElement;
-    const maxWidth = parent.clientWidth - 12;
+    const available = parent.clientWidth - 24;
+    if (available <= 0) return;
     let size = 22;
     span.style.fontSize = size + 'px';
-    while (span.scrollWidth > maxWidth && size > 11) {
+    while (span.scrollWidth > available && size > 10) {
       size -= 1;
       span.style.fontSize = size + 'px';
     }
@@ -88,7 +83,6 @@
     }, 180);
   });
 
-  // ----- share -----
   document.getElementById('share-btn').addEventListener('click', async () => {
     const text = `My free will: ${lastWill}`;
     if (navigator.share) {
