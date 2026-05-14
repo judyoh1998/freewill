@@ -1,12 +1,7 @@
 #!/usr/bin/env node
 // One-time extractor: pulls transparent layer PNGs out of the Figma PDF.
-//
-// Usage:
-//   1. Save your Figma PDF as ./design.pdf (or pass a path).
-//   2. From the repo root: `npm install && npm run extract`
-//   3. The 7 layered PNGs land in ./assets/.
 
-import { PDFDocument, PDFName, PDFRawStream } from "pdf-lib";
+import { PDFDocument, PDFName, PDFRawStream, PDFArray } from "pdf-lib";
 import jpeg from "jpeg-js";
 import { PNG } from "pngjs";
 import zlib from "node:zlib";
@@ -17,8 +12,6 @@ import { fileURLToPath } from "node:url";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.join(__dirname, "..");
 
-// (width x height) → output filename. 360x360 is ambiguous — disambiguated
-// by encounter order on page 1 of the Figma export (hat appears before bow).
 const BY_DIMS = {
   "194x230":  "head-2.png",
   "821x1192": "head-1.png",
@@ -33,69 +26,68 @@ function nameOf(node) {
   return null;
 }
 
-function decodeStream(stream) {
-  const filter = stream.dict.lookup(PDFName.of("Filter"));
-  const raw = stream.contents;
-  const filterName = nameOf(filter);
-  if (filterName === "DCTDecode") {
-    // JPEG-encoded
-    return { kind: "jpeg", bytes: Buffer.from(raw) };
+function filterNames(stream) {
+  const f = stream.dict.lookup(PDFName.of("Filter"));
+  if (!f) return [];
+  if (f instanceof PDFArray) {
+    return f.array.map((n) => nameOf(n)).filter(Boolean);
   }
-  if (filterName === "FlateDecode") {
-    return { kind: "raw", bytes: zlib.inflateSync(Buffer.from(raw)) };
-  }
-  if (!filterName) {
-    return { kind: "raw", bytes: Buffer.from(raw) };
-  }
-  return { kind: filterName, bytes: Buffer.from(raw) };
+  const n = nameOf(f);
+  return n ? [n] : [];
 }
 
-function rgbaFromImage(decoded, width, height) {
-  if (decoded.kind === "jpeg") {
-    const dec = jpeg.decode(decoded.bytes, { useTArray: true, formatAsRGBA: true });
-    return Buffer.from(dec.data); // RGBA
+function isJPEG(bytes) {
+  return bytes.length > 3 && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff;
+}
+
+function rgbaFromImage(streamBytes, filters, width, height) {
+  // Try JPEG by filter name OR magic-byte sniff.
+  if (filters.includes("DCTDecode") || isJPEG(streamBytes)) {
+    const dec = jpeg.decode(streamBytes, { useTArray: true, formatAsRGBA: true });
+    return Buffer.from(dec.data);
   }
-  if (decoded.kind === "raw") {
-    // Likely 3-channel RGB
-    const expected = width * height * 3;
-    if (decoded.bytes.length === expected) {
-      const out = Buffer.alloc(width * height * 4);
-      for (let i = 0, j = 0; i < decoded.bytes.length; i += 3, j += 4) {
-        out[j]     = decoded.bytes[i];
-        out[j + 1] = decoded.bytes[i + 1];
-        out[j + 2] = decoded.bytes[i + 2];
-        out[j + 3] = 255;
-      }
-      return out;
+  // Flate-decoded raw pixels.
+  let raw = streamBytes;
+  if (filters.includes("FlateDecode")) {
+    try { raw = zlib.inflateSync(streamBytes); } catch { /* fall through */ }
+  }
+  const totalPx = width * height;
+  if (raw.length === totalPx * 4) return Buffer.from(raw);
+  if (raw.length === totalPx * 3) {
+    const out = Buffer.alloc(totalPx * 4);
+    for (let i = 0, j = 0; i < raw.length; i += 3, j += 4) {
+      out[j]     = raw[i];
+      out[j + 1] = raw[i + 1];
+      out[j + 2] = raw[i + 2];
+      out[j + 3] = 255;
     }
-    // 4-channel
-    if (decoded.bytes.length === width * height * 4) return decoded.bytes;
-    // 1-channel grayscale
-    if (decoded.bytes.length === width * height) {
-      const out = Buffer.alloc(width * height * 4);
-      for (let i = 0, j = 0; i < decoded.bytes.length; i++, j += 4) {
-        out[j] = out[j + 1] = out[j + 2] = decoded.bytes[i];
-        out[j + 3] = 255;
-      }
-      return out;
+    return out;
+  }
+  if (raw.length === totalPx) {
+    const out = Buffer.alloc(totalPx * 4);
+    for (let i = 0, j = 0; i < raw.length; i++, j += 4) {
+      out[j] = out[j + 1] = out[j + 2] = raw[i];
+      out[j + 3] = 255;
     }
+    return out;
   }
   return null;
 }
 
-function alphaFromMask(decoded, width, height) {
-  if (decoded.kind === "raw") {
-    if (decoded.bytes.length === width * height) return decoded.bytes;
-  }
-  if (decoded.kind === "jpeg") {
-    const dec = jpeg.decode(decoded.bytes, { useTArray: true, formatAsRGBA: false });
-    // jpeg-js returns RGB for grayscale-source — take R channel as alpha
+function alphaFromMask(streamBytes, filters, width, height) {
+  // Soft masks may also be DCTDecode (greyscale JPEG) or FlateDecode raw.
+  if (filters.includes("DCTDecode") || isJPEG(streamBytes)) {
+    const dec = jpeg.decode(streamBytes, { useTArray: true, formatAsRGBA: true });
+    // R channel of decoded RGBA = luminance for grayscale JPEGs
     const out = Buffer.alloc(width * height);
-    for (let i = 0, j = 0; i < dec.data.length; i += dec.data.length / (width * height), j++) {
-      out[j] = dec.data[Math.floor(i)];
-    }
+    for (let i = 0; i < width * height; i++) out[i] = dec.data[i * 4];
     return out;
   }
+  let raw = streamBytes;
+  if (filters.includes("FlateDecode")) {
+    try { raw = zlib.inflateSync(streamBytes); } catch { /* fall through */ }
+  }
+  if (raw.length === width * height) return Buffer.from(raw);
   return null;
 }
 
@@ -104,17 +96,15 @@ async function main() {
   try { await fs.access(pdfPath); }
   catch {
     console.error(`PDF not found: ${pdfPath}`);
-    console.error("Put your Figma PDF at ./design.pdf or pass a path:");
-    console.error("  node scripts/extract-from-pdf.mjs /path/to/design.pdf");
     process.exit(1);
   }
-
   const bytes = await fs.readFile(pdfPath);
   const doc = await PDFDocument.load(bytes, { ignoreEncryption: true });
   const outDir = path.join(REPO_ROOT, "assets");
   await fs.mkdir(outDir, { recursive: true });
 
   const seenDims = {};
+  const writtenForName = new Set();
   let written = 0;
 
   for (const [ref, obj] of doc.context.enumerateIndirectObjects()) {
@@ -135,19 +125,17 @@ async function main() {
       outName = idx === 0 ? "hat.png" : "bow.png";
       seenDims[key] = idx + 1;
     }
-    if (!outName) {
-      // Skip images we don't recognize (e.g. SMasks themselves)
-      continue;
-    }
+    if (!outName) continue;
+    if (writtenForName.has(outName)) continue; // skip duplicates (page 2 etc)
 
-    const decoded = decodeStream(obj);
-    const rgba = rgbaFromImage(decoded, width, height);
+    const streamBytes = Buffer.from(obj.contents);
+    const filters = filterNames(obj);
+    const rgba = rgbaFromImage(streamBytes, filters, width, height);
     if (!rgba) {
-      console.warn(`skip ${outName}: couldn't decode (${decoded.kind}, ${decoded.bytes.length} bytes)`);
+      console.warn(`skip ${outName}: couldn't decode (filters=${filters.join(",") || "none"}, ${streamBytes.length} bytes)`);
       continue;
     }
 
-    // Optional soft mask (alpha)
     const smaskNode = obj.dict.get(PDFName.of("SMask"));
     if (smaskNode) {
       const smaskStream = doc.context.lookup(smaskNode);
@@ -155,8 +143,9 @@ async function main() {
         const sw = smaskStream.dict.lookup(PDFName.of("Width")).numberValue;
         const sh = smaskStream.dict.lookup(PDFName.of("Height")).numberValue;
         if (sw === width && sh === height) {
-          const sdec = decodeStream(smaskStream);
-          const alpha = alphaFromMask(sdec, width, height);
+          const sb = Buffer.from(smaskStream.contents);
+          const sFilters = filterNames(smaskStream);
+          const alpha = alphaFromMask(sb, sFilters, sw, sh);
           if (alpha) {
             for (let i = 0; i < width * height; i++) rgba[i * 4 + 3] = alpha[i];
           }
@@ -168,6 +157,7 @@ async function main() {
     png.data = rgba;
     await fs.writeFile(path.join(outDir, outName), PNG.sync.write(png));
     console.log(`wrote ${outName}  (${width}x${height})`);
+    writtenForName.add(outName);
     written++;
   }
 
