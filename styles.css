@@ -214,54 +214,30 @@ body {
   position: relative;
   width: 100%;
   max-width: 320px;
+  min-height: 220px;
   background: #f5b4c4;
   border-radius: 8px;
-  padding: 24px 28px 28px;
+  padding: 28px 28px;
   filter: drop-shadow(0 6px 10px rgba(0,0,0,0.18));
   transform: rotate(-0.6deg);
-  overflow: hidden;
-  min-height: 220px;
-}
-
-.rows {
-  display: grid;
-  grid-template-rows: repeat(4, 1fr);
-  row-gap: 0;
-  min-height: 180px;
-}
-
-.row {
-  position: relative;
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   justify-content: center;
-  padding-bottom: 2px;
 }
 
-.row::after {
-  content: "";
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  height: 1.5px;
-  background: #1a1226;
-}
-
-.row--text span {
-  display: inline-block;
+.will {
+  margin: 0;
   font-size: 22px;
   font-weight: 500;
   color: #1a1226;
   text-align: center;
   letter-spacing: 0.5px;
-  line-height: 1;
-  white-space: nowrap;
-  padding-bottom: 2px;
-  max-width: 100%;
+  line-height: 1.25;
+  overflow-wrap: break-word;
+  hyphens: auto;
 }
 
-.row--text.flip span {
+.will.flip {
   animation: flip 360ms ease;
 }
 
