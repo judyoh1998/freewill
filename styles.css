@@ -67,7 +67,7 @@ body {
 .head--bulb { height: 96px; }
 
 @media (prefers-reduced-motion: no-preference) {
-  .heads .head {
+  .heads .head:not(.head--bulb) {
     animation: head-toggle 0.9s linear infinite;
   }
 }
