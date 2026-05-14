@@ -56,33 +56,14 @@
       guard += 1;
     } while (next === lastWill && wills.length > 1 && guard < 10);
     lastWill = next;
-    const span = document.getElementById('will-text');
-    span.textContent = next;
-    requestAnimationFrame(() => fitWill(span));
-    // Re-fit once the pixel font has actually loaded (it's wider than the
-    // system fallback, so a pre-load fit can underestimate the real width).
-    if (document.fonts && document.fonts.ready) {
-      document.fonts.ready.then(() => fitWill(span));
-    }
-  }
-
-  function fitWill(span) {
-    const parent = span.parentElement;
-    const available = parent.clientWidth - 24;
-    if (available <= 0) return;
-    let size = 22;
-    span.style.fontSize = size + 'px';
-    while (span.scrollWidth > available && size > 9) {
-      size -= 1;
-      span.style.fontSize = size + 'px';
-    }
+    document.getElementById('will-text').textContent = next;
   }
 
   document.getElementById('regen-btn').addEventListener('click', () => {
-    const row = document.querySelector('.row--text');
-    row.classList.remove('flip');
-    void row.offsetWidth;
-    row.classList.add('flip');
+    const will = document.getElementById('will-text');
+    will.classList.remove('flip');
+    void will.offsetWidth;
+    will.classList.add('flip');
     setTimeout(() => {
       pickWill();
     }, 180);
