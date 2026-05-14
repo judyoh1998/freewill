@@ -145,7 +145,11 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
+  transition: transform 120ms ease;
 }
+
+.envelope-btn:hover { transform: translateY(-2px); }
+.envelope-btn:active { transform: translateY(1px); }
 
 .envelope {
   position: relative;
@@ -154,7 +158,6 @@ body {
   max-width: 320px;
   aspect-ratio: 380 / 175;
   filter: drop-shadow(0 10px 14px rgba(0,0,0,0.18));
-  transform-origin: 50% 90%;
 }
 
 .envelope-svg {
@@ -181,27 +184,9 @@ body {
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  .screen--closed .envelope {
-    animation: envelope-toggle 0.9s linear infinite;
-  }
   .screen--closed .open-me {
     animation: open-me-toggle 0.9s linear infinite;
   }
-  .envelope-btn:hover .envelope,
-  .envelope-btn:focus-visible .envelope,
-  .envelope-btn:hover ~ .open-me,
-  .envelope-btn:focus-visible ~ .open-me {
-    animation-play-state: paused;
-  }
-  .envelope-btn:active .envelope {
-    animation-play-state: paused;
-    transform: rotate(0deg) translateY(2px);
-  }
-}
-
-@keyframes envelope-toggle {
-  0%, 49.99% { transform: rotate(-3deg) translateY(0); }
-  50%, 100% { transform: rotate(3deg) translateY(-4px); }
 }
 
 @keyframes open-me-toggle {
