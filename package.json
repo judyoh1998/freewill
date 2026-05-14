@@ -5,9 +5,12 @@
   "description": "Free will generator — static HTML/CSS/JS app",
   "scripts": {
     "start": "serve -l 3000 .",
-    "dev": "serve -l 3000 ."
+    "dev": "serve -l 3000 .",
+    "extract": "node scripts/extract-from-pdf.mjs"
   },
   "devDependencies": {
+    "pdfjs-dist": "^4.10.38",
+    "pngjs": "^7.0.0",
     "serve": "^14.2.4"
   },
   "stackblitz": {
