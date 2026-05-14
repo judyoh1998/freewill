@@ -56,7 +56,25 @@
       guard += 1;
     } while (next === lastWill && wills.length > 1 && guard < 10);
     lastWill = next;
-    document.getElementById('will-text').textContent = next;
+    const el = document.getElementById('will-text');
+    el.textContent = next;
+    requestAnimationFrame(() => fitWill(el));
+    if (document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(() => fitWill(el));
+    }
+  }
+
+  // Shrink font size for long wills so they fit inside the notebook card.
+  function fitWill(el) {
+    const card = el.parentElement; // .notebook
+    const maxH = card.clientHeight - 56; // top + bottom padding (28+28)
+    if (maxH <= 0) return;
+    let size = 22;
+    el.style.fontSize = size + 'px';
+    while (el.scrollHeight > maxH && size > 11) {
+      size -= 1;
+      el.style.fontSize = size + 'px';
+    }
   }
 
   document.getElementById('regen-btn').addEventListener('click', () => {
